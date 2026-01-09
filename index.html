@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ma Première DApp</title>
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+button { padding: 10px 20px; font-size: 16px; margin-top: 10px; cursor: pointer; }
+#status { margin-top: 20px; font-weight: bold; }
+#contractResult { margin-top: 10px; color: blue; }
+.connected { color: green; }
+.disconnected { color: red; }
+</style>
+</head>
+<body>
+<h1>Interagir avec mon Smart Contract</h1>
+<p>Statut de la connexion MetaMask : <span id="status" class="disconnected">Déconnecté</span></p>
+<button id="connectWallet">Connecter MetaMask</button>
+<h3>Interaction avec le Smart Contract</h3>
+<button id="callContractFunction" disabled>Appeler ma Fonction (getValue)</button>
+<p>Résultat du Smart Contract : <span id="contractResult">N/A</span></p>
+<script>
+let web3;
+let accounts;
+let myContract;
+// REMPLACEZ CES VALEURS par les vôtres !
+const CONTRACT_ADDRESS = '0x3fb843d582E8E1708047C7Cc7cAFAE2520A35876'; // <-- Collez l'adresse de votre contrat ici
+const CONTRACT_ABI = [ {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "value",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_newValue",
+          "type": "uint256"
+        }
+      ],
+      "name": "setValue",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getValue",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    }
+];
+// ------------------------------------------------------------------
+const connectWalletButton = document.getElementById('connectWallet');
+const callContractButton = document.getElementById('callContractFunction');
+const statusSpan = document.getElementById('status');
+const resultSpan = document.getElementById('contractResult');
+async function connectWallet() {
+if (window.ethereum) {
+web3 = new Web3(window.ethereum);
+try {
+accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+statusSpan.textContent = 'Connecté';
+statusSpan.className = 'connected';
+myContract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+callContractButton.disabled = false;
+console.log("Connecté avec le compte :", accounts[0]);
+} catch (error) {
+console.error("L'utilisateur a refusé la connexion ou une erreur est survenue.", error);
+statusSpan.textContent = 'Connexion refusée';
+statusSpan.className = 'disconnected';
+}
+} else {
+statusSpan.textContent = 'MetaMask non détecté. Veuillez l\'installer.';
+statusSpan.className = 'disconnected';
+alert('MetaMask non détecté. Veuillez installer l\'extension de navigateur.');
+}
+}
+async function callContractFunction() {
+if (!myContract || !accounts || accounts.length === 0) {
+alert('Veuillez d\'abord connecter votre portefeuille MetaMask.');
+return;
+}
+try {
+// Exemple d'appel d'une fonction 'view' (lecture de données)
+const result = await myContract.methods.value().call();
+resultSpan.textContent = result;
+console.log("Résultat de la fonction contractuelle :", result);
+// Exemple d'appel d'une fonction 'transaction' (écriture de données)
+await myContract.methods.setValue(42).send({ from: accounts[0] });
+// console.log("Transaction envoyée pour setValue.");
+} catch (error) {
+console.error("Erreur lors de l'appel de la fonction contractuelle :", error);
+resultSpan.textContent = 'Erreur !';
+}
+}
+connectWalletButton.addEventListener('click', connectWallet);
+callContractButton.addEventListener('click', callContractFunction);
+</script>
+</body>
+</html>
